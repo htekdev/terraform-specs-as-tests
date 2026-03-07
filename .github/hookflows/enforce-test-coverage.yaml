@@ -1,0 +1,31 @@
+name: Enforce Test Coverage
+description: >
+  Blocks commits when Terraform test coverage drops below configured thresholds.
+  Runs the coverage analyzer to check resource coverage, security attribute coverage,
+  OPA Rego coverage, and minimum layer depth per resource.
+
+on:
+  commit:
+    lifecycle: pre
+    paths:
+      - 'modules/**/*.tf'
+      - 'tests/**/*.tftest.hcl'
+      - 'policies/**'
+    paths-ignore:
+      - '**/*.md'
+      - '**/__pycache__/**'
+
+blocking: true
+
+steps:
+  - name: Run coverage analysis
+    run: |
+      Write-Host "Running Terraform test coverage analysis..."
+      python scripts/coverage.py --no-opa
+      if ($LASTEXITCODE -ne 0) {
+        Write-Host ""
+        Write-Host "Coverage thresholds not met."
+        Write-Host "Run 'python scripts/coverage.py' locally for the full report."
+        exit 1
+      }
+      Write-Host "All coverage thresholds met."

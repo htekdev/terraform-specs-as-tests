@@ -1,0 +1,32 @@
+name: Enforce Module Structure
+description: Ensure Terraform modules follow the required file structure
+blocking: true
+
+on:
+  commit:
+    lifecycle: pre
+
+steps:
+  - name: Validate module structure
+    run: |
+      $violations = @()
+      $requiredFiles = @('main.tf', 'variables.tf', 'outputs.tf', 'versions.tf')
+
+      $moduleDirs = Get-ChildItem -Path 'modules' -Directory -ErrorAction SilentlyContinue
+      foreach ($moduleDir in $moduleDirs) {
+        foreach ($reqFile in $requiredFiles) {
+          if (-not (Test-Path (Join-Path $moduleDir.FullName $reqFile))) {
+            $violations += "  - Module '$($moduleDir.Name)' missing $reqFile"
+          }
+        }
+      }
+
+      if ($violations.Count -gt 0) {
+        Write-Host "❌ BLOCKED: Module structure violations detected."
+        $violations | ForEach-Object { Write-Host $_ }
+        Write-Host ""
+        Write-Host "Every module must contain: main.tf, variables.tf, outputs.tf, versions.tf"
+        exit 1
+      }
+
+      Write-Host "✅ All modules follow required structure."

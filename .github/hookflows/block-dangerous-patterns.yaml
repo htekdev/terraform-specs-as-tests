@@ -1,0 +1,53 @@
+name: Block Dangerous Infrastructure Patterns
+description: Prevent hardcoded secrets and insecure defaults in Terraform code
+blocking: true
+
+on:
+  file:
+    lifecycle: pre
+    paths:
+      - "modules/**/*.tf"
+      - "environments/**/*.tf"
+      - "*.tf"
+    types:
+      - edit
+      - create
+
+steps:
+  - name: Scan for dangerous patterns
+    run: |
+      $violations = @()
+      $searchDirs = @('modules', 'environments') | Where-Object { Test-Path $_ }
+
+      $patterns = @{
+        'password\s*=\s*"[^"]*"'                  = 'Hardcoded password detected'
+        'client_secret\s*=\s*"[^"]*"'              = 'Hardcoded client_secret detected'
+        'access_key\s*=\s*"[^"]*"'                 = 'Hardcoded access_key detected'
+        'public_network_access_enabled\s*=\s*true'  = 'public_network_access_enabled = true is not allowed'
+        'admin_enabled\s*=\s*true'                  = 'admin_enabled = true is not allowed (ACR)'
+        'private_cluster_enabled\s*=\s*false'       = 'private_cluster_enabled = false is not allowed'
+        'purge_protection_enabled\s*=\s*false'      = 'purge_protection_enabled = false is not allowed'
+      }
+
+      foreach ($dir in $searchDirs) {
+        $tfFiles = Get-ChildItem -Path $dir -Filter '*.tf' -Recurse -ErrorAction SilentlyContinue
+        foreach ($file in $tfFiles) {
+          $content = Get-Content $file.FullName -Raw -ErrorAction SilentlyContinue
+          if ($content) {
+            foreach ($pattern in $patterns.Keys) {
+              if ($content -match $pattern) {
+                $violations += "  - $($patterns[$pattern]) in $($file.FullName)"
+              }
+            }
+          }
+        }
+      }
+
+      if ($violations.Count -gt 0) {
+        Write-Host "❌ BLOCKED: Dangerous infrastructure patterns detected."
+        Write-Host "Violations:"
+        $violations | ForEach-Object { Write-Host $_ }
+        exit 1
+      }
+
+      Write-Host "✅ No dangerous patterns detected."

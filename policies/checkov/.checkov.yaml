@@ -1,0 +1,13 @@
+branch: main
+compact: true
+download-external-modules: false
+evaluate-variables: true
+external-checks-dir:
+  - policies/checkov
+framework:
+  - terraform
+output:
+  - cli
+  - junitxml
+quiet: false
+soft-fail: false

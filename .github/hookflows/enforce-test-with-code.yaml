@@ -1,0 +1,47 @@
+name: Enforce Test Changes with Code Changes
+description: Block .tf changes in modules/ without corresponding test file changes
+blocking: true
+
+on:
+  commit:
+    lifecycle: pre
+
+steps:
+  - name: Check for test coverage
+    run: |
+      $changedFiles = git diff --cached --name-only -- 'modules/*.tf' 2>$null
+      if (-not $changedFiles) {
+        Write-Host "No module changes detected. Skipping test check."
+        exit 0
+      }
+
+      $changedModules = $changedFiles | ForEach-Object {
+        if ($_ -match '^modules/([^/]+)/') { $Matches[1] }
+      } | Sort-Object -Unique
+
+      $missingTests = @()
+      foreach ($module in $changedModules) {
+        $testName = $module -replace '-', '_'
+        $tftestFile = "tests/unit/$testName.tftest.hcl"
+        $tftestChanged = (git diff --cached --name-only -- $tftestFile 2>$null | Measure-Object).Count
+        $opaChanged = (git diff --cached --name-only -- 'policies/opa/tests/' 2>$null | Measure-Object).Count
+        $bddChanged = (git diff --cached --name-only -- 'tests/compliance/' 2>$null | Measure-Object).Count
+
+        if ($tftestChanged -eq 0 -and $opaChanged -eq 0 -and $bddChanged -eq 0) {
+          $missingTests += "  - Module '$module' changed but no test files updated"
+        }
+      }
+
+      if ($missingTests.Count -gt 0) {
+        Write-Host "❌ BLOCKED: Module changes require corresponding test changes."
+        Write-Host "Missing test updates:"
+        $missingTests | ForEach-Object { Write-Host $_ }
+        Write-Host ""
+        Write-Host "Update at least one of:"
+        Write-Host "  - tests/unit/{module}.tftest.hcl"
+        Write-Host "  - policies/opa/tests/*.rego"
+        Write-Host "  - tests/compliance/*.feature"
+        exit 1
+      }
+
+      Write-Host "✅ All module changes have corresponding test changes."

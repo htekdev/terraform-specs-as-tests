@@ -1,0 +1,41 @@
+name: Terraform Compliance (BDD)
+
+on:
+  pull_request:
+    paths:
+      - '**.tf'
+      - 'tests/compliance/**'
+  workflow_dispatch:
+
+env:
+  ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+
+jobs:
+  compliance:
+    name: BDD Compliance Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
+      - name: Terraform Init
+        run: terraform init -backend=false
+      - name: Generate Plan JSON
+        run: |
+          terraform plan -out=tfplan -input=false
+          terraform show -json tfplan > tfplan.json
+      - name: Install terraform-compliance
+        run: pip install terraform-compliance
+      - name: Run Compliance Tests
+        run: terraform-compliance -f tests/compliance/ -p tfplan.json
+      - name: Upload Plan JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-json
+          path: tfplan.json
+          retention-days: 7

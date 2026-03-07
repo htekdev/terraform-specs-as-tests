@@ -1,0 +1,3 @@
+# Conftest configuration for Azure Enterprise Landing Zone policies
+[policy]
+  namespace = ["network", "security", "governance", "cost"]

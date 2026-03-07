@@ -1,0 +1,48 @@
+name: Require Policy Coverage for New Resources
+description: New resource types must have OPA policy coverage
+blocking: false
+
+on:
+  commit:
+    lifecycle: pre
+
+steps:
+  - name: Check policy coverage
+    run: |
+      $diffOutput = git diff --cached --diff-filter=A -- 'modules/*.tf' 2>$null
+      if (-not $diffOutput) {
+        Write-Host "No new Azure resource types added."
+        exit 0
+      }
+
+      $newResources = $diffOutput | Select-String -Pattern '^\+.*resource "azurerm_([^"]*)"' -AllMatches |
+        ForEach-Object { $_.Matches.Groups[1].Value } |
+        Sort-Object -Unique |
+        ForEach-Object { "azurerm_$_" }
+
+      if ($newResources.Count -eq 0) {
+        Write-Host "No new Azure resource types added."
+        exit 0
+      }
+
+      Write-Host "New resource types detected:"
+      $newResources | ForEach-Object { Write-Host "  $_" }
+      Write-Host ""
+
+      $uncovered = @()
+      foreach ($resourceType in $newResources) {
+        $found = Get-ChildItem -Path 'policies/opa' -Filter '*.rego' -Recurse -ErrorAction SilentlyContinue |
+          Select-String -Pattern $resourceType -SimpleMatch -Quiet
+        if (-not $found) {
+          $uncovered += "  - $resourceType has no OPA policy coverage"
+        }
+      }
+
+      if ($uncovered.Count -gt 0) {
+        Write-Host "⚠️ WARNING: New resource types without OPA policy coverage:"
+        $uncovered | ForEach-Object { Write-Host $_ }
+        Write-Host ""
+        Write-Host "Consider adding policies in policies/opa/ for these resource types."
+      } else {
+        Write-Host "✅ All new resource types have OPA policy coverage."
+      }

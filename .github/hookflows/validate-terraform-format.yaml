@@ -1,0 +1,25 @@
+name: Validate Terraform Format
+description: Ensure all .tf files are properly formatted
+blocking: false
+
+on:
+  file:
+    lifecycle: post
+    paths:
+      - "**/*.tf"
+    types:
+      - edit
+      - create
+
+steps:
+  - name: Check terraform fmt
+    run: |
+      $output = terraform fmt -check -recursive -diff 2>&1
+      if ($LASTEXITCODE -ne 0) {
+        Write-Host "⚠️ Terraform formatting issues detected:"
+        Write-Host $output
+        Write-Host ""
+        Write-Host "Run 'terraform fmt -recursive' to fix."
+      } else {
+        Write-Host "✅ All .tf files are properly formatted."
+      }

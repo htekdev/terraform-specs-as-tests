@@ -1,0 +1,42 @@
+{
+  "thresholds": {
+    "resource_coverage_pct": 80,
+    "security_coverage_pct": 100,
+    "min_layers_per_resource": 1,
+    "opa_rego_coverage_pct": 95
+  },
+  "must_test_attributes": {
+    "azurerm_storage_account": [
+      "public_network_access_enabled",
+      "min_tls_version",
+      "https_traffic_only_enabled",
+      "blob_properties"
+    ],
+    "azurerm_key_vault": [
+      "purge_protection_enabled",
+      "public_network_access_enabled",
+      "soft_delete_retention_days"
+    ],
+    "azurerm_kubernetes_cluster": [
+      "private_cluster_enabled",
+      "role_based_access_control_enabled",
+      "network_profile",
+      "identity"
+    ],
+    "azurerm_container_registry": [
+      "admin_enabled",
+      "public_network_access_enabled",
+      "sku"
+    ],
+    "azurerm_firewall": [
+      "sku_tier"
+    ],
+    "azurerm_network_security_group": [
+      "name",
+      "tags"
+    ]
+  },
+  "exclude_resources": [
+    "azurerm_resource_group"
+  ]
+}
