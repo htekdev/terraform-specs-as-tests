@@ -112,7 +112,6 @@ def discover_unit_test_coverage(root):
         ):
             res_type = match.group(1)
             coverage[res_type].add("__exists__")
-            coverage[res_type].add(attribute)
 
         # Also catch output.xxx references — prove module is tested
         # Extract module source to associate outputs with module
