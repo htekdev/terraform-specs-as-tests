@@ -54,6 +54,15 @@ jobs:
       - name: Terraform Init (Integration)
         run: terraform init -backend=false -test-directory=tests/integration
 
+      - name: Clean up orphaned test resource groups
+        run: |
+          echo "Removing existing test resource groups for a clean slate..."
+          for rg in $(az group list --query "[?starts_with(name, 'rg-lz-test-')].name" -o tsv 2>/dev/null); do
+            echo "  Deleting $rg..."
+            az group delete --name "$rg" --yes 2>/dev/null || true
+          done
+          echo "Pre-test cleanup complete."
+
       - name: Run Integration Tests
         id: integration
         run: |
