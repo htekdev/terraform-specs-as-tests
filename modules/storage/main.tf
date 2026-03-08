@@ -17,6 +17,7 @@ resource "azurerm_storage_account" "storage" {
   https_traffic_only_enabled      = true
   public_network_access_enabled   = false
   allow_nested_items_to_be_public = false
+  shared_access_key_enabled       = false
   tags                            = local.tags
 
   blob_properties {
@@ -29,6 +30,10 @@ resource "azurerm_storage_account" "storage" {
 
   network_rules {
     default_action = "Deny"
+  }
+
+  sas_policy {
+    expiration_period = "00.01:00:00"
   }
 }
 

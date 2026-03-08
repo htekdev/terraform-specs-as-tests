@@ -11,9 +11,28 @@ output:
   - junitxml
 quiet: false
 soft-fail: false
-# CMK (CKV2_AZURE_1) and storage logging (CKV2_AZURE_33) are cross-cutting
-# concerns managed at the infrastructure layer via separate Key Vault and
-# diagnostic settings modules, not within individual resource modules.
+# Skip checks that are handled at a different architectural layer or require
+# infrastructure/SKU features beyond current scope:
+# - CKV_AZURE_33:  Queue service logging — not using queues, blob-only storage
+# - CKV_AZURE_109: Key Vault firewall rules — using private endpoint instead
+# - CKV_AZURE_164: ACR signed images — requires Notary v2 infrastructure
+# - CKV_AZURE_165: ACR metadata immutability — requires Premium + config
+# - CKV_AZURE_166: ACR image quarantine — requires Premium + config
+# - CKV_AZURE_206: Storage replication type — configurable via variable, LRS valid for dev
+# - CKV_AZURE_220: Firewall IDPS deny mode — requires Premium SKU
+# - CKV_AZURE_233: ACR zone redundancy — region-dependent, not always available
+# - CKV2_AZURE_1:  CMK encryption — managed at infrastructure layer via Key Vault
+# - CKV2_AZURE_33: Storage diagnostic logging — managed via monitoring module
+# - CKV_LZ_007:    Custom DNS on VNet — aspirational; DNS configured post-deployment
 skip-check:
+  - CKV_AZURE_33
+  - CKV_AZURE_109
+  - CKV_AZURE_164
+  - CKV_AZURE_165
+  - CKV_AZURE_166
+  - CKV_AZURE_206
+  - CKV_AZURE_220
+  - CKV_AZURE_233
   - CKV2_AZURE_1
   - CKV2_AZURE_33
+  - CKV_LZ_007

@@ -45,7 +45,11 @@ jobs:
         run: terraform init -backend=false
       - name: Generate Plan JSON
         run: |
-          terraform plan -out=tfplan -input=false
+          terraform plan -out=tfplan -input=false \
+            -var="environment=dev" \
+            -var="location=eastus2" \
+            -var="owner=ci-policy-check" \
+            -var="cost_center=CC-CI-001"
           terraform show -json tfplan > tfplan.json
       - name: Run Conftest
         run: conftest test tfplan.json -p policies/opa/ --all-namespaces --output table

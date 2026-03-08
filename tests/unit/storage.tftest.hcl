@@ -164,3 +164,29 @@ run "storage_uses_correct_location" {
     error_message = "Storage account must be deployed to eastus2"
   }
 }
+
+run "storage_disables_shared_key_access" {
+  command = plan
+
+  module {
+    source = "./modules/storage"
+  }
+
+  assert {
+    condition     = azurerm_storage_account.storage.shared_access_key_enabled == false
+    error_message = "Storage account must disable shared key access (CKV2_AZURE_40)"
+  }
+}
+
+run "storage_has_sas_expiration_policy" {
+  command = plan
+
+  module {
+    source = "./modules/storage"
+  }
+
+  assert {
+    condition     = azurerm_storage_account.storage.sas_policy[0].expiration_period == "00.01:00:00"
+    error_message = "Storage account must have a SAS expiration policy (CKV2_AZURE_41)"
+  }
+}

@@ -54,6 +54,11 @@ run "firewall_uses_standard_tier" {
     condition     = azurerm_firewall.fw.sku_name == "AZFW_VNet"
     error_message = "Firewall must use AZFW_VNet SKU name for VNet-based deployment"
   }
+
+  assert {
+    condition     = azurerm_firewall.fw.threat_intel_mode == "Deny"
+    error_message = "Firewall must use Deny threat intelligence mode (CKV_AZURE_216)"
+  }
 }
 
 run "firewall_creates_public_ip" {

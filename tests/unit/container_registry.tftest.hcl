@@ -125,3 +125,16 @@ run "acr_uses_correct_location" {
     error_message = "Container Registry must be deployed to eastus2"
   }
 }
+
+run "acr_has_retention_policy" {
+  command = plan
+
+  module {
+    source = "./modules/container-registry"
+  }
+
+  assert {
+    condition     = azurerm_container_registry.acr.retention_policy_in_days == 7
+    error_message = "Container Registry must have a retention policy for untagged manifests (CKV_AZURE_167)"
+  }
+}

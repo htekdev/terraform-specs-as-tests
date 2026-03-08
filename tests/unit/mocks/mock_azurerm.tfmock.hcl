@@ -57,6 +57,11 @@ mock_provider "azurerm" {
       kube_config_raw     = "mock-kubeconfig"
       oidc_issuer_url     = "https://oidc.mock"
       node_resource_group = "MC_rg-mock_aks-mock_eastus2"
+      kubelet_identity = [{
+        client_id                 = "00000000-0000-0000-0000-000000000002"
+        object_id                 = "00000000-0000-0000-0000-000000000003"
+        user_assigned_identity_id = ""
+      }]
     }
   }
 

@@ -25,6 +25,7 @@ resource "azurerm_firewall" "fw" {
   location            = var.location
   sku_name            = "AZFW_VNet"
   sku_tier            = "Standard"
+  threat_intel_mode   = "Deny"
   firewall_policy_id  = azurerm_firewall_policy.policy.id
   tags                = local.tags
 

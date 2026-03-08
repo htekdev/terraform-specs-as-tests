@@ -97,19 +97,6 @@ variable "aks_config" {
   }
 }
 
-variable "allowed_vm_sizes" {
-  description = "Approved VM SKUs for AKS node pools"
-  type        = list(string)
-  default = [
-    "Standard_D2s_v5",
-    "Standard_D4s_v5",
-    "Standard_D8s_v5",
-    "Standard_D16s_v5",
-    "Standard_E4s_v5",
-    "Standard_E8s_v5",
-  ]
-}
-
 variable "tags" {
   description = "Additional tags to apply to all resources"
   type        = map(string)

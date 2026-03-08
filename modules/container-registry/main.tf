@@ -14,6 +14,8 @@ resource "azurerm_container_registry" "acr" {
   admin_enabled                 = false
   public_network_access_enabled = false
   tags                          = local.tags
+
+  retention_policy_in_days = 7
 }
 
 resource "azurerm_private_endpoint" "acr" {

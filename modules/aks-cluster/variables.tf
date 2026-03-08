@@ -39,6 +39,7 @@ variable "log_analytics_workspace_id" {
 variable "acr_id" {
   description = "Azure Container Registry ID for ACR integration"
   type        = string
+  default     = null
 }
 
 variable "kubernetes_version" {
