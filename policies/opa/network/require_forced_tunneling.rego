@@ -1,5 +1,7 @@
 package network.forced_tunneling
 
+import rego.v1
+
 # All azurerm_route_table resources in spoke VNets must contain a
 # default route (0.0.0.0/0) with next_hop_type "VirtualAppliance"
 # to force traffic through the hub firewall.

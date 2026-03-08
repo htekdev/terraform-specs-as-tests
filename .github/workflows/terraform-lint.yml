@@ -14,6 +14,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  security-events: write
 
 jobs:
   fmt:
@@ -49,9 +50,9 @@ jobs:
         with:
           tflint_version: "v0.53.0"
       - name: Init TFLint
-        run: tflint --init --config policies/tflint/.tflint.hcl
+        run: tflint --init --config "$GITHUB_WORKSPACE/policies/tflint/.tflint.hcl"
       - name: Run TFLint
-        run: tflint --recursive --config policies/tflint/.tflint.hcl --format compact
+        run: tflint --recursive --config "$GITHUB_WORKSPACE/policies/tflint/.tflint.hcl" --format compact
 
   checkov:
     name: Checkov Security Scan
@@ -67,6 +68,7 @@ jobs:
           output_format: cli,sarif
           output_file_path: console,results.sarif
           soft_fail: false
+          config_file: policies/checkov/.checkov.yaml
       - name: Upload SARIF
         if: always()
         uses: github/codeql-action/upload-sarif@v3

@@ -1,5 +1,7 @@
 package network.require_nsg
 
+import rego.v1
+
 # Every azurerm_subnet must have a network_security_group_id set.
 # AzureFirewallSubnet and GatewaySubnet are exempt because Azure
 # does not allow NSGs on those special-purpose subnets.

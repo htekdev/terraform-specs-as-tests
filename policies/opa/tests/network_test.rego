@@ -1,5 +1,7 @@
 package network_test
 
+import rego.v1
+
 import data.network.deny_public_ip
 import data.network.require_nsg
 import data.network.hub_spoke

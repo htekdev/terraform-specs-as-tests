@@ -17,7 +17,7 @@ run "setup" {
   command = apply
 
   module {
-    source = "./setup"
+    source = "./tests/integration/setup"
   }
 
   variables {
@@ -29,7 +29,7 @@ run "deploy_log_forwarding" {
   command = apply
 
   module {
-    source = "../../modules/log-forwarding"
+    source = "./modules/log-forwarding"
   }
 
   variables {
@@ -89,9 +89,8 @@ run "validate_namespace_security" {
   command = plan
 
   module {
-    source = "./setup"
+    source = "./tests/integration/setup"
   }
-
   variables {
     test_id = var.test_id
   }

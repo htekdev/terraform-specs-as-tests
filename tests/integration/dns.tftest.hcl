@@ -17,7 +17,7 @@ run "setup" {
   command = apply
 
   module {
-    source = "./setup"
+    source = "./tests/integration/setup"
   }
 
   variables {
@@ -29,7 +29,7 @@ run "deploy_dns" {
   command = apply
 
   module {
-    source = "../../modules/dns"
+    source = "./modules/dns"
   }
 
   variables {

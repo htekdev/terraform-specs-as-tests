@@ -24,11 +24,23 @@ resource "azurerm_virtual_network" "test" {
   tags                = local.test_tags
 }
 
+resource "azurerm_network_security_group" "endpoints" {
+  name                = "nsg-snet-endpoints"
+  location            = azurerm_resource_group.test.location
+  resource_group_name = azurerm_resource_group.test.name
+  tags                = local.test_tags
+}
+
 resource "azurerm_subnet" "endpoints" {
   name                 = "snet-endpoints"
   resource_group_name  = azurerm_resource_group.test.name
   virtual_network_name = azurerm_virtual_network.test.name
   address_prefixes     = ["10.200.1.0/24"]
+}
+
+resource "azurerm_subnet_network_security_group_association" "endpoints" {
+  subnet_id                 = azurerm_subnet.endpoints.id
+  network_security_group_id = azurerm_network_security_group.endpoints.id
 }
 
 resource "azurerm_log_analytics_workspace" "test" {

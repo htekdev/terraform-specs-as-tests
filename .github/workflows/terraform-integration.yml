@@ -121,6 +121,7 @@ jobs:
     if: always()
     needs: [integration-tests, e2e-test]
     timeout-minutes: 10
+    environment: integration-test
 
     steps:
       - uses: actions/checkout@v4

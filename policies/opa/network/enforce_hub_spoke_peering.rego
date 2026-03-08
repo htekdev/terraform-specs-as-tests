@@ -1,5 +1,7 @@
 package network.hub_spoke
 
+import rego.v1
+
 # Validate that VNet peerings only connect spokes to the hub.
 # Spoke-to-spoke peering is denied. A peering is considered
 # hub-bound when the peering name or remote_virtual_network_id

@@ -1,5 +1,7 @@
 package governance.naming_conventions
 
+import rego.v1
+
 # Azure CAF naming pattern: {type_prefix}-{project}-{environment}-{region}-{instance}
 # Instance portion is flexible (alphanumeric, optional).
 

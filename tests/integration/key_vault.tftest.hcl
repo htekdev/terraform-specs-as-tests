@@ -21,7 +21,7 @@ run "setup" {
   command = apply
 
   module {
-    source = "./setup"
+    source = "./tests/integration/setup"
   }
 
   variables {
@@ -33,7 +33,7 @@ run "deploy_key_vault" {
   command = apply
 
   module {
-    source = "../../modules/key-vault"
+    source = "./modules/key-vault"
   }
 
   variables {

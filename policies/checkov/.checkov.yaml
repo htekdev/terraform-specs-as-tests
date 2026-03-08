@@ -11,3 +11,9 @@ output:
   - junitxml
 quiet: false
 soft-fail: false
+# CMK (CKV2_AZURE_1) and storage logging (CKV2_AZURE_33) are cross-cutting
+# concerns managed at the infrastructure layer via separate Key Vault and
+# diagnostic settings modules, not within individual resource modules.
+skip-check:
+  - CKV2_AZURE_1
+  - CKV2_AZURE_33

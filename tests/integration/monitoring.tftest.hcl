@@ -17,7 +17,7 @@ run "setup_rg" {
   command = apply
 
   module {
-    source = "./setup"
+    source = "./tests/integration/setup"
   }
 
   variables {
@@ -29,7 +29,7 @@ run "deploy_monitoring" {
   command = apply
 
   module {
-    source = "../../modules/monitoring"
+    source = "./modules/monitoring"
   }
 
   variables {

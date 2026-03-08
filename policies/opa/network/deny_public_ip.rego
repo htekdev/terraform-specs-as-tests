@@ -1,5 +1,7 @@
 package network.deny_public_ip
 
+import rego.v1
+
 # Deny azurerm_public_ip resources unless allocated for Azure Firewall.
 # Firewall public IPs are identified by names containing "fw" or "firewall".
 

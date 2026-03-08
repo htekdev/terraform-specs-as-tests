@@ -1,5 +1,7 @@
 package network.deny_broad_rules
 
+import rego.v1
+
 # Deny NSG rules that allow inbound traffic from overly broad
 # sources: "*", "0.0.0.0/0", or "Internet".
 
