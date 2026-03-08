@@ -6,7 +6,6 @@ description: >
 
 on:
   commit:
-    lifecycle: pre
     paths:
       - 'modules/**/*.tf'
       - 'tests/**/*.tftest.hcl'

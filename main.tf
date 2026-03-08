@@ -45,6 +45,7 @@ module "dns" {
   source = "./modules/dns"
 
   resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
   hub_vnet_id         = module.hub_network.vnet_id
   tags                = local.common_tags
 }
@@ -154,4 +155,19 @@ module "rbac" {
   aks_kubelet_identity_id = module.aks_cluster.kubelet_identity[0].object_id
   acr_id                  = module.container_registry.registry_id
   key_vault_id            = module.key_vault.vault_id
+}
+
+# ─── Log Forwarding (Event Hub for SIEM) ─────────────────────────────────────
+
+module "log_forwarding" {
+  source = "./modules/log-forwarding"
+
+  resource_group_name        = azurerm_resource_group.main.name
+  location                   = var.location
+  environment                = var.environment
+  project                    = var.project
+  subnet_id                  = module.spoke_network["workload-2"].subnet_ids["endpoints"]
+  private_dns_zone_id        = module.dns.zone_ids["evhns"]
+  log_analytics_workspace_id = module.monitoring.workspace_id
+  tags                       = local.common_tags
 }

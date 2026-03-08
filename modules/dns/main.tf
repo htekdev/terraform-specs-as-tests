@@ -1,9 +1,10 @@
 locals {
   dns_zones = {
-    kv  = "privatelink.vaultcore.azure.net"
-    st  = "privatelink.blob.core.windows.net"
-    acr = "privatelink.azurecr.io"
-    aks = "privatelink.eastus2.azmk8s.io"
+    kv    = "privatelink.vaultcore.azure.net"
+    st    = "privatelink.blob.core.windows.net"
+    acr   = "privatelink.azurecr.io"
+    aks   = "privatelink.${var.location}.azmk8s.io"
+    evhns = "privatelink.servicebus.windows.net"
   }
   tags = merge(var.tags, { Module = "dns" })
 }

@@ -52,3 +52,13 @@ output "rbac_role_assignment_ids" {
   description = "Map of role assignment names to their IDs"
   value       = module.rbac.role_assignment_ids
 }
+
+output "eventhub_namespace_id" {
+  description = "Resource ID of the Event Hub namespace for log forwarding"
+  value       = module.log_forwarding.namespace_id
+}
+
+output "eventhub_namespace_name" {
+  description = "Name of the Event Hub namespace for log forwarding"
+  value       = module.log_forwarding.namespace_name
+}

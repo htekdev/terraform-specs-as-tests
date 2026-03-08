@@ -4,7 +4,6 @@ blocking: false
 
 on:
   file:
-    lifecycle: post
     paths:
       - "**/*.tf"
     types:

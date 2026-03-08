@@ -1,4 +1,4 @@
-.PHONY: all lint test compliance policy coverage help
+.PHONY: all lint test compliance policy coverage integration e2e validate-deployed help
 
 SHELL := /bin/bash
 
@@ -39,6 +39,23 @@ compliance: ## Run terraform-compliance BDD tests
 	terraform show -json tfplan > tfplan.json
 	terraform-compliance -f tests/compliance/ -p tfplan.json
 	@rm -f tfplan tfplan.json
+
+# ─── Layer 5: Integration Tests (Real Azure) ────────────────────────────────
+integration: ## Run integration tests against real Azure (requires az login)
+	terraform init -backend=false -test-directory=tests/integration
+	terraform test -test-directory=tests/integration -verbose
+
+# ─── Layer 6: E2E Tests (Full Landing Zone) ──────────────────────────────────
+e2e: ## Run full E2E landing zone test (requires az login, ~30 min)
+	terraform init -backend=false -test-directory=tests/e2e
+	terraform test -test-directory=tests/e2e -verbose
+
+# ─── Post-Deploy Validation ──────────────────────────────────────────────────
+validate-deployed: ## Validate deployed resources via az CLI (usage: make validate-deployed RG=<name>)
+	bash scripts/validate-deployed.sh $(RG)
+
+sweep: ## Delete expired test resource groups
+	bash scripts/sweep-test-resources.sh
 
 # ─── Coverage Analysis ────────────────────────────────────────────────────────
 coverage: ## Run test coverage analysis across all layers

@@ -5,6 +5,7 @@ import rego.v1
 import data.security.deny_acr_admin
 import data.security.require_aks_private
 import data.security.require_encryption
+import data.security.require_eventhub_private
 import data.security.require_keyvault_protection
 import data.security.require_private_endpoints
 
@@ -429,5 +430,88 @@ test_deleted_resources_not_denied_aks_private if {
 	}]}
 
 	result := require_aks_private.deny with input as inp
+	count(result) == 0
+}
+
+# ---------------------------------------------------------------------------
+# require_eventhub_private tests
+# ---------------------------------------------------------------------------
+
+test_eventhub_private_access_disabled_passes if {
+	inp := {"resource_changes": [{
+		"type": "azurerm_eventhub_namespace",
+		"address": "module.log_forwarding.azurerm_eventhub_namespace.main",
+		"change": {
+			"actions": ["create"],
+			"after": {
+				"public_network_access_enabled": false,
+				"minimum_tls_version": "1.2",
+			},
+		},
+	}]}
+
+	result := require_eventhub_private.deny with input as inp
+	count(result) == 0
+}
+
+test_eventhub_public_access_enabled_fails if {
+	inp := {"resource_changes": [{
+		"type": "azurerm_eventhub_namespace",
+		"address": "module.log_forwarding.azurerm_eventhub_namespace.main",
+		"change": {
+			"actions": ["create"],
+			"after": {
+				"public_network_access_enabled": true,
+				"minimum_tls_version": "1.2",
+			},
+		},
+	}]}
+
+	result := require_eventhub_private.deny with input as inp
+	count(result) > 0
+}
+
+test_eventhub_tls_12_passes if {
+	inp := {"resource_changes": [{
+		"type": "azurerm_eventhub_namespace",
+		"address": "module.log_forwarding.azurerm_eventhub_namespace.main",
+		"change": {
+			"actions": ["create"],
+			"after": {
+				"public_network_access_enabled": false,
+				"minimum_tls_version": "1.2",
+			},
+		},
+	}]}
+
+	result := require_eventhub_private.deny with input as inp
+	count(result) == 0
+}
+
+test_eventhub_tls_missing_fails if {
+	inp := {"resource_changes": [{
+		"type": "azurerm_eventhub_namespace",
+		"address": "module.log_forwarding.azurerm_eventhub_namespace.main",
+		"change": {
+			"actions": ["create"],
+			"after": {
+				"public_network_access_enabled": false,
+				"minimum_tls_version": "1.0",
+			},
+		},
+	}]}
+
+	result := require_eventhub_private.deny with input as inp
+	count(result) > 0
+}
+
+test_deleted_eventhub_not_denied if {
+	inp := {"resource_changes": [{
+		"type": "azurerm_eventhub_namespace",
+		"address": "module.log_forwarding.azurerm_eventhub_namespace.old",
+		"change": {"actions": ["delete"], "after": {}},
+	}]}
+
+	result := require_eventhub_private.deny with input as inp
 	count(result) == 0
 }

@@ -3,8 +3,7 @@ description: Ensure Terraform modules follow the required file structure
 blocking: true
 
 on:
-  commit:
-    lifecycle: pre
+  commit: {}
 
 steps:
   - name: Validate module structure

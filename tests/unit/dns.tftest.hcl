@@ -6,6 +6,7 @@ mock_provider "azurerm" {}
 
 variables {
   resource_group_name = "rg-lz-dev-eastus2"
+  location            = "eastus2"
   hub_vnet_id         = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-mock/providers/Microsoft.Network/virtualNetworks/vnet-hub"
   tags = {
     Environment = "dev"

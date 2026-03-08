@@ -1,0 +1,136 @@
+name: Integration Tests (Live Azure)
+
+on:
+  schedule:
+    # Weeknights at 2am UTC
+    - cron: '0 2 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      test_filter:
+        description: 'Filter to specific test file (e.g., log_forwarding)'
+        required: false
+        type: string
+      run_e2e:
+        description: 'Also run full E2E landing zone test'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TERRAFORM_VERSION: "1.9.0"
+
+jobs:
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: integration-test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set ARM environment variables
+        run: |
+          echo "ARM_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+          echo "ARM_USE_OIDC=true" >> $GITHUB_ENV
+
+      - name: Terraform Init (Integration)
+        run: terraform init -backend=false -test-directory=tests/integration
+
+      - name: Run Integration Tests
+        id: integration
+        run: |
+          if [ -n "${{ github.event.inputs.test_filter }}" ]; then
+            terraform test -test-directory=tests/integration -filter="tests/integration/${{ github.event.inputs.test_filter }}.tftest.hcl" -verbose 2>&1 | tee integration-results.txt
+          else
+            terraform test -test-directory=tests/integration -verbose 2>&1 | tee integration-results.txt
+          fi
+
+      - name: Upload Integration Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: integration-results.txt
+          retention-days: 14
+
+  e2e-test:
+    name: E2E Landing Zone Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: github.event.inputs.run_e2e == 'true' || github.event_name == 'schedule'
+    needs: integration-tests
+    environment: integration-test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set ARM environment variables
+        run: |
+          echo "ARM_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+          echo "ARM_USE_OIDC=true" >> $GITHUB_ENV
+
+      - name: Terraform Init (E2E)
+        run: terraform init -backend=false -test-directory=tests/e2e
+
+      - name: Run E2E Test
+        id: e2e
+        run: terraform test -test-directory=tests/e2e -verbose 2>&1 | tee e2e-results.txt
+
+      - name: Upload E2E Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: e2e-results.txt
+          retention-days: 14
+
+  cleanup:
+    name: Sweep Orphaned Resources
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [integration-tests, e2e-test]
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Sweep expired test resource groups
+        run: bash scripts/sweep-test-resources.sh

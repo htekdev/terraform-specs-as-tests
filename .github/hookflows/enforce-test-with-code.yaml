@@ -3,8 +3,7 @@ description: Block .tf changes in modules/ without corresponding test file chang
 blocking: true
 
 on:
-  commit:
-    lifecycle: pre
+  commit: {}
 
 steps:
   - name: Check for test coverage

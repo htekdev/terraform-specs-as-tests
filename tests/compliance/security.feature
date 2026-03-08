@@ -45,3 +45,13 @@ Feature: Security Hardening
   Scenario: Azure Firewall must exist
     Given I have azurerm_firewall defined
     Then it must have sku_tier
+
+  Scenario: Event Hub namespace must deny public access
+    Given I have azurerm_eventhub_namespace defined
+    Then it must have public_network_access_enabled
+    And its value must be false
+
+  Scenario: Event Hub namespace must require TLS 1.2
+    Given I have azurerm_eventhub_namespace defined
+    Then it must have minimum_tls_version
+    And its value must be "1.2"

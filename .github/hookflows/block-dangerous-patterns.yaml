@@ -4,7 +4,6 @@ blocking: true
 
 on:
   file:
-    lifecycle: pre
     paths:
       - "modules/**/*.tf"
       - "environments/**/*.tf"

@@ -20,6 +20,7 @@ taggable_resource_types := {
 	"azurerm_storage_account",
 	"azurerm_log_analytics_workspace",
 	"azurerm_public_ip",
+	"azurerm_eventhub_namespace",
 }
 
 deny contains msg if {

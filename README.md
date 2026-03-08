@@ -59,13 +59,15 @@ All tests pass locally with zero cloud cost:
 
 | Layer | Tool | Tests | Status |
 |-------|------|-------|--------|
-| OPA/Conftest | `opa test` | 77 unit tests across 4 policy domains | ✅ 77/77 |
-| terraform test | `terraform test` | 73 assertions across 10 modules | ✅ 73/73 |
-| Checkov | `checkov` | 8 custom Python policies (CKV_LZ_001–008) | ✅ Written |
-| terraform-compliance | `terraform-compliance` | 6 BDD feature files (~30 scenarios) | ✅ Written |
+| OPA/Conftest | `opa test` | 82 unit tests across 4 policy domains | ✅ 82/82 |
+| terraform test | `terraform test` | 93 assertions across 11 modules | ✅ 93/93 |
+| Checkov | `checkov` | 9 custom Python policies (CKV_LZ_001–009) | ✅ Written |
+| terraform-compliance | `terraform-compliance` | 6 BDD feature files (~32 scenarios) | ✅ Written |
 | tflint | `tflint` | Azure-specific static analysis rules | ✅ Configured |
-| Hookflows | `gh hookflow` | 5 agent governance workflows | ✅ Validated |
-| CI/CD | GitHub Actions | 6 pipeline workflows | ✅ Configured |
+| Hookflows | `gh hookflow` | 6 agent governance workflows | ✅ Validated |
+| CI/CD | GitHub Actions | 7 pipeline workflows | ✅ Configured |
+| Integration | `terraform test` (real Azure) | 4 per-module live tests | ✅ Nightly |
+| E2E | `terraform test` (real Azure) | Full landing zone deploy | ✅ Nightly |
 
 ## 7 Testing Layers
 
@@ -134,7 +136,24 @@ make lint
 - **require-policy-coverage** — New resources must have OPA policy coverage
 
 ### 7. CI/CD Pipeline (GitHub Actions)
-6 workflow files creating a multi-stage gate: lint → test → compliance → policy → plan → apply.
+7 workflow files creating a multi-stage gate: lint → test → compliance → policy → plan → apply → integration.
+
+### 8. Integration Tests (Real Azure)
+4 per-module integration tests deploying real Azure resources and validating live state:
+- **Log-Forwarding**: Event Hub namespace with private endpoint, diagnostic settings, auth rules
+- **Key Vault**: Private Key Vault with purge protection
+- **Monitoring**: Log Analytics workspace with correct SKU and retention
+- **DNS**: All 5 private DNS zones with VNet links
+
+Uses `terraform test` with `command = apply` (auto-destroys after assertions). Runs nightly via OIDC-authenticated GitHub Actions.
+
+### 9. E2E Landing Zone Test
+Full deployment of all 11 modules validating cross-module integration. Runs nightly after integration tests pass.
+
+```bash
+make integration  # Per-module tests (requires az login)
+make e2e          # Full landing zone (requires az login, ~30 min)
+```
 
 ## Quick Start
 
@@ -147,12 +166,18 @@ pip install terraform-compliance
 make check
 
 # Individual test layers
-make test        # terraform test with mocks (73 tests)
-make policy-test # OPA policy unit tests (77 tests)
+make test        # terraform test with mocks (93 tests)
+make policy-test # OPA policy unit tests (82 tests)
 make coverage    # Test coverage analysis (4 dimensions)
 make lint        # fmt + tflint + Checkov
 make compliance  # BDD tests (requires plan JSON)
 make policy      # OPA against plan (requires plan JSON)
+
+# Live tests (requires Azure credentials)
+make integration      # Per-module integration tests
+make e2e              # Full landing zone E2E test
+make validate-deployed RG=rg-lz-dev-eastus2  # Post-deploy validation
+make sweep            # Clean up expired test resource groups
 ```
 
 ## Test Coverage Enforcement
@@ -188,7 +213,7 @@ Coverage is enforced at 3 levels:
 
 ```
 terraform-specs-as-tests/
-├── modules/                    # 10 Terraform modules
+├── modules/                    # 11 Terraform modules
 │   ├── hub-network/            # Hub VNet + subnets + NSG
 │   ├── spoke-network/          # Spoke VNets + peering + routes
 │   ├── firewall/               # Azure Firewall + policy + diagnostics
@@ -198,29 +223,40 @@ terraform-specs-as-tests/
 │   ├── storage/                # Storage + private endpoint + encryption
 │   ├── monitoring/             # Log Analytics workspace
 │   ├── dns/                    # Private DNS zones + VNet links
-│   └── rbac/                   # Role assignments (ACR pull, KV access)
+│   ├── rbac/                   # Role assignments (ACR pull, KV access)
+│   └── log-forwarding/         # Event Hub namespace + SIEM streaming
 ├── policies/
-│   ├── opa/                    # 15 Rego policies + 77 unit tests
+│   ├── opa/                    # 16 Rego policies + 82 unit tests
 │   │   ├── network/            # 5 network policies
-│   │   ├── security/           # 5 security policies
+│   │   ├── security/           # 6 security policies
 │   │   ├── governance/         # 3 governance policies
 │   │   ├── cost/               # 2 cost policies
-│   │   └── tests/              # 4 test files (77 tests total)
-│   ├── checkov/                # 8 custom Python policies
+│   │   └── tests/              # 4 test files (82 tests total)
+│   ├── checkov/                # 9 custom Python policies
 │   └── tflint/                 # tflint config + rules
 ├── tests/
-│   ├── unit/                   # 10 .tftest.hcl + mock provider (73 tests)
+│   ├── unit/                   # 11 .tftest.hcl + mock provider (93 tests)
+│   ├── integration/            # 4 per-module live tests (real Azure)
+│   │   ├── setup/              # Shared test infrastructure module
+│   │   ├── log_forwarding.tftest.hcl
+│   │   ├── key_vault.tftest.hcl
+│   │   ├── monitoring.tftest.hcl
+│   │   └── dns.tftest.hcl
+│   ├── e2e/                    # Full landing zone E2E test
+│   │   └── landing_zone.tftest.hcl
 │   └── compliance/             # 6 BDD/Gherkin feature files
 ├── scripts/
 │   ├── coverage.py             # Test coverage analyzer (4 dimensions)
-│   └── coverage_config.json    # Coverage thresholds + must-test manifest
+│   ├── coverage_config.json    # Coverage thresholds + must-test manifest
+│   ├── validate-deployed.sh    # Post-deploy az CLI validation
+│   └── sweep-test-resources.sh # TTL-based test resource cleanup
 ├── environments/
 │   ├── dev/                    # Dev variable values
 │   └── prod/                   # Prod variable values
 ├── .github/
-│   ├── hookflows/              # 5 agent governance workflows
-│   └── workflows/              # 6 CI/CD pipeline workflows
-├── main.tf                     # Root composition (all 10 modules)
+│   ├── hookflows/              # 6 agent governance workflows
+│   └── workflows/              # 7 CI/CD pipeline workflows
+├── main.tf                     # Root composition (all 11 modules)
 ├── variables.tf                # Root variables with validation
 ├── outputs.tf                  # Root outputs
 ├── versions.tf                 # Provider version constraints

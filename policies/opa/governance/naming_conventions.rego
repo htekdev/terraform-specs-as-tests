@@ -17,6 +17,7 @@ type_prefixes := {
 	"azurerm_resource_group": "rg",
 	"azurerm_private_endpoint": "pe",
 	"azurerm_private_dns_zone": "pdn",
+	"azurerm_eventhub_namespace": "evhns",
 }
 
 # Pattern: {prefix}-{project}-{env}-{region} with optional -{instance} suffix.

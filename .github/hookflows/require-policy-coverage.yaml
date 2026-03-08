@@ -3,8 +3,7 @@ description: New resource types must have OPA policy coverage
 blocking: false
 
 on:
-  commit:
-    lifecycle: pre
+  commit: {}
 
 steps:
   - name: Check policy coverage
