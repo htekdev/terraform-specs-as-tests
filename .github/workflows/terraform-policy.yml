@@ -31,20 +31,33 @@ jobs:
     name: Conftest Policy Evaluation
     runs-on: ubuntu-latest
     needs: opa-unit-tests
-    if: ${{ github.event_name == 'workflow_dispatch' || secrets.ARM_SUBSCRIPTION_ID != '' }}
     steps:
+      - name: Check Azure Credentials
+        id: check-creds
+        run: |
+          if [ -n "$ARM_SUBSCRIPTION_ID" ] && [ -n "$ARM_TENANT_ID" ]; then
+            echo "available=true" >> $GITHUB_OUTPUT
+          else
+            echo "available=false" >> $GITHUB_OUTPUT
+            echo "::warning::Azure credentials not configured — skipping Conftest plan evaluation"
+          fi
       - uses: actions/checkout@v4
+        if: steps.check-creds.outputs.available == 'true'
       - uses: hashicorp/setup-terraform@v3
+        if: steps.check-creds.outputs.available == 'true'
         with:
           terraform_version: "1.9.0"
       - name: Install Conftest
+        if: steps.check-creds.outputs.available == 'true'
         run: |
           LATEST_VERSION=$(curl -s https://api.github.com/repos/open-policy-agent/conftest/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//')
           curl -L "https://github.com/open-policy-agent/conftest/releases/download/v${LATEST_VERSION}/conftest_${LATEST_VERSION}_Linux_x86_64.tar.gz" | tar xz
           sudo mv conftest /usr/local/bin/
       - name: Terraform Init
+        if: steps.check-creds.outputs.available == 'true'
         run: terraform init -backend=false
       - name: Generate Plan JSON
+        if: steps.check-creds.outputs.available == 'true'
         run: |
           terraform plan -out=tfplan -input=false \
             -var="environment=dev" \
@@ -53,4 +66,5 @@ jobs:
             -var="cost_center=CC-CI-001"
           terraform show -json tfplan > tfplan.json
       - name: Run Conftest
+        if: steps.check-creds.outputs.available == 'true'
         run: conftest test tfplan.json -p policies/opa/ --all-namespaces --output table
